@@ -588,10 +588,16 @@ class Look extends Controller
         if($user_id==null){
             return $this->error('用户id不能为空');
         }
-        $user = model('XcxUser')->where('id',$user_id)->select();
+        $user = model('XcxUser')
+        ->where('id',$user_id)
+        ->select();
         $user = $user[0];
+        $this->fansInfo($user['id']);
+        $users = model('XcxUser')->where('id',$user_id)->find();
         $mine = input('mine');
-        $state = model('XcxUserguanzhu')->where('form_user_id',$mine)->where('user_id',$user_id)->select();
+        $state = model('XcxUserguanzhu')
+        ->where('form_user_id',$mine)
+        ->where('user_id',$user_id)->select();
         if ($state!=null){
             $user['hasChange'] = true;
         }else{
@@ -599,5 +605,36 @@ class Look extends Controller
         }
         return $user;
     }
+
+     public function fansInfo($user_id) {
+        $dianzan = model('XcxAdd')
+        ->where('user_id',$user_id)
+        ->field('id,user_praise')
+        ->select();
+        $zan_num = 0;
+        foreach ($dianzan as $key => $value) {
+             // return $value['user_praise'];
+            $zan_num = $zan_num + $value['user_praise'];
+        }
+        $fans = model('XcxUserguanzhu')
+        ->where('user_id',$user_id)
+        ->count();
+        $guanzhu = model('XcxUserguanzhu')
+        ->where('form_user_id',$user_id)
+        ->count();
+        $data = [
+            'user_praise' => $zan_num,
+            'user_fans' => $fans,
+            'user_follow' =>$guanzhu 
+        ];
+        $info = model('XcxUser')
+        ->where('id',$user_id)
+       ->update($data);
+        if (!$info) {
+           return '点赞数更新失败';
+        }
+        return 'Success';
+    }
+
 
 }
