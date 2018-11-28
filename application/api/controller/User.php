@@ -79,18 +79,12 @@ class User extends Controller
         $user = model('XcxUser')->where('openid', $apiData['openid'])->find();
         if (!empty($user)) {
             $weizhang = model('XcxAdd')->where('user_id',$user['id'])->select();
+            $this->fansInfo($user['id']);
             return [$user,$apiData];
         }
         $data['apiData'] =$apiData;
 
         return $data;
-    }
-    public function getUseris() {
-        $openid =  $_GET['openid'];
-        $user = model('XcxUser')->where('openid', $openid)->find();
-
-
-        return $user;
     }
 
     public function getUserInfo()
@@ -195,6 +189,44 @@ class User extends Controller
         $output = curl_exec($ch);
         curl_close($ch);
         return $output;
+    }
+        public function getUseris() {
+        $openid =  $_GET['openid'];
+        $user = model('XcxUser')->where('openid', $openid)->find();
+        $this->fansInfo($user['id']);
+        $users = model('XcxUser')->where('openid', $openid)->find();
+        return $users;
+    }
+
+
+    public function fansInfo($user_id) {
+        $dianzan = model('XcxAdd')
+        ->where('user_id',$user_id)
+        ->field('id,user_praise')
+        ->select();
+        $zan_num = 0;
+        foreach ($dianzan as $key => $value) {
+             // return $value['user_praise'];
+            $zan_num = $zan_num + $value['user_praise'];
+        }
+        $fans = model('XcxUserguanzhu')
+        ->where('user_id',$user_id)
+        ->count();
+        $guanzhu = model('XcxUserguanzhu')
+        ->where('form_user_id',$user_id)
+        ->count();
+        $data = [
+            'user_praise' => $zan_num,
+            'user_fans' => $fans,
+            'user_follow' =>$guanzhu 
+        ];
+        $info = model('XcxUser')
+        ->where('id',$user_id)
+       ->update($data);
+        if (!$info) {
+           return '点赞数更新失败';
+        }
+        return 'Success';
     }
 
 }
